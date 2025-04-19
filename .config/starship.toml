@@ -1,0 +1,28 @@
+format = """\
+    $character\
+    $directory\
+    $git_branch\
+    $status\
+"""
+
+add_newline = false
+
+[character]
+success_symbol = "[➜](fg:#98C379)"
+error_symbol = "[➜](fg:#BF616A)"
+
+[directory]
+style = "fg:#56B6C2"
+format = "[$path]($style) "
+truncation_length = 1
+truncate_to_repo = true # This will show only the repo name instead of the full directory path
+
+[git_branch]
+format = '[git:\(]($style)[${branch}](fg:#D0666F)[\)]($style) ' # Explicitly use parentheses for git branch
+style = "fg:#5FAAE8" # Apply color to "git:" and parentheses
+
+[status]
+disabled = false
+symbol = "✗"
+style = "fg:#BF616A"
+format = "[$symbol]($style) "
