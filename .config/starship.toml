@@ -7,22 +7,30 @@ format = """\
 
 add_newline = false
 
+palette = "colorscheme"
+
+[palettes.colorscheme]
+success = '#98C379'
+failure = '#BF616A'
+dir     = '#56B6C2'
+repo    = '#D0666F'
+
 [character]
-success_symbol = "[➜](fg:#98C379)"
-error_symbol = "[➜](fg:#BF616A)"
+success_symbol = "[➜](fg:success)"
+error_symbol = "[➜](fg:failure)"
 
 [directory]
-style = "fg:#56B6C2"
+style = "fg:dir"
 format = "[$path]($style) "
 truncation_length = 1
-truncate_to_repo = true # This will show only the repo name instead of the full directory path
+truncate_to_repo = true     # This will show only the repo name instead of the full directory path
 
 [git_branch]
-format = '[git:\(]($style)[${branch}](fg:#D0666F)[\)]($style) ' # Explicitly use parentheses for git branch
-style = "fg:#5FAAE8" # Apply color to "git:" and parentheses
+format = '[git:\(]($style)[${branch}](fg:repo)[\)]($style) ' # Explicitly use parentheses for git branch
+style = "fg:#5FAAE8"                                         # Apply color to "git:" and parentheses
 
 [status]
 disabled = false
 symbol = "✗"
-style = "fg:#BF616A"
+style = "fg:failure"
 format = "[$symbol]($style) "
