@@ -1,6 +1,7 @@
 format = """\
     $character\
     $directory\
+    $python\
     $git_branch\
     $status\
 """
@@ -28,6 +29,12 @@ truncate_to_repo = true     # This will show only the repo name instead of the f
 [git_branch]
 format = '[git:\(]($style)[${branch}](fg:repo)[\)]($style) ' # Explicitly use parentheses for git branch
 style = "fg:#5FAAE8"                                         # Apply color to "git:" and parentheses
+
+[python]
+format = '[\($virtualenv\)](fg:success) '
+detect_extensions = []
+detect_files = []
+detect_folders = []
 
 [status]
 disabled = false
