@@ -3,6 +3,7 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+
 $cliPath = Join-Path $repoRoot 'scripts/dotfiles.ps1'
 
 try {
@@ -30,6 +31,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Dotfiles apply reported entries needing attention (exit code $LASTEXITCODE)." }
     & $pwsh -NoLogo -NoProfile -File $cliPath status
     if ($LASTEXITCODE -ne 0) { throw "Dotfiles status reported entries needing attention (exit code $LASTEXITCODE)." }
+
+    # Expose the repository path only after setup has completed successfully.
+    [Environment]::SetEnvironmentVariable('DOTFILES_REPO_ROOT', $repoRoot, 'User')
+    $env:DOTFILES_REPO_ROOT = $repoRoot
 }
 catch {
     Write-Host ("ERROR: {0}" -f $_.Exception.Message) -ForegroundColor Red
