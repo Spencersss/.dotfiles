@@ -1,0 +1,115 @@
+{
+  "cli_default_open_behavior": "existing_window",
+  "session": {
+    "trust_all_worktrees": true
+  },
+  "agent": {
+    "enabled": true,
+    "button": true,
+    "default_profile": "write",
+    "default_model": {
+      "provider": "openrouter",
+      "model": "openai/gpt-oss-120b:free",
+      "enable_thinking": true
+    },
+    "single_file_review": true,
+    "inline_assistant_model": {
+      "provider": "openrouter",
+      "model": "openai/gpt-oss-120b:free",
+      "enable_thinking": false
+    },
+    "tool_permissions": {
+      "default": "allow",
+      "tools": {
+        "edit_file": {
+          "default": "allow"
+        },
+        "save_file": {
+          "default": "allow"
+        },
+        "create_directory": {
+          "default": "allow"
+        },
+        "move_path": {
+          "default": "allow"
+        },
+        "copy_path": {
+          "default": "allow"
+        }
+      }
+    },
+    "dock": "right",
+    "default_width": 640,
+    "favorite_models": [],
+    "model_parameters": []
+  },
+  "icon_theme": {
+    "mode": "light",
+    "light": "JetBrains New UI Icons (Dark)",
+    "dark": "JetBrains New UI Icons (Dark)"
+  },
+  "title_bar": {
+    "show_user_menu": true,
+    "show_menus": true
+  },
+  "toolbar": {
+    "breadcrumbs": false,
+    "quick_actions": false
+  },
+  "status_bar": {
+    "experimental.show": true
+  },
+  "buffer_line_height": "comfortable",
+  "buffer_font_weight": 550.0,
+  "project_panel": {
+    "button": true,
+    "dock": "left",
+    "default_width": 280,
+    "auto_fold_dirs": false,
+    "starts_open": true
+  },
+  "file_finder": {
+    "modal_max_width": "xlarge"
+  },
+  "telemetry": {
+    "diagnostics": true,
+    "metrics": false
+  },
+  "terminal": {
+    "font_weight": 500.0,
+    "font_size": 13.0,
+    "font_family": "JetBrainsMono Nerd Font"
+  },
+  "buffer_font_family": "JetBrainsMono Nerd Font",
+  "file_types": {
+    "java": [
+      "*.java"
+    ]
+  },
+  "colorize_brackets": false,
+  "semantic_tokens": "combined",
+  "soft_wrap": "editor_width",
+  "agent_servers": {
+    "codex-acp": {
+      "default_config_options": {
+        "mode": "auto"
+      },
+      "type": "registry"
+    },
+    "claude-acp": {
+      "type": "registry"
+    },
+    "github-copilot-cli": {
+      "type": "registry"
+    }
+  },
+  "base_keymap": "JetBrains",
+  "ui_font_size": 15.0,
+  "buffer_font_size": 13.0,
+  "theme": {
+    "mode": "dark",
+    "light": "One Light",
+    "dark": "Spencer Zed Theme"
+  },
+  "close_on_file_delete": true
+}

@@ -1,0 +1,7 @@
+[
+  {
+    "bindings": {
+      "f12": "editor::GoToDefinition"
+    }
+  }
+]
