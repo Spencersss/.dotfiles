@@ -4,6 +4,7 @@
     "trust_all_worktrees": true
   },
   "agent": {
+    "threads_sidebar_auto_open": false,
     "enabled": true,
     "button": true,
     "default_profile": "write",

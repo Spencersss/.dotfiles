@@ -1,7 +1,7 @@
 Set-StrictMode -Version Latest
 
 function Get-DotfilesRepositoryRoot {
-    # Utils.ps1 lives in scripts/modules; derive the root from this file, not the
+    # Utils.ps1 lives in scripts; derive the root from this file, not the
     # caller's working directory, so commands work from any location.
     $root = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
     return $root.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
@@ -102,6 +102,10 @@ function Resolve-DotfilesVariables {
                         break
                     }
                 }
+            }
+            if (-not $found -and [string]::Equals($name, 'DOCUMENTS', [System.StringComparison]::OrdinalIgnoreCase)) {
+                $replacement = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::MyDocuments)
+                $found = -not [string]::IsNullOrWhiteSpace($replacement)
             }
             if (-not $found) {
                 $replacement = [Environment]::GetEnvironmentVariable($name)
