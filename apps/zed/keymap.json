@@ -1,0 +1,13 @@
+[
+  {
+    "bindings": {
+      "f12": "editor::GoToDefinition"
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "shift shift": "file_finder::Toggle"
+    }
+  }
+]

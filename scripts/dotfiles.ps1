@@ -6,8 +6,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$moduleRoot = Join-Path $PSScriptRoot 'modules'
+$moduleRoot = $PSScriptRoot
 . (Join-Path $moduleRoot 'Utils.ps1')
+. (Join-Path $moduleRoot 'Backup.ps1')
 . (Join-Path $moduleRoot 'Apply.ps1')
 . (Join-Path $moduleRoot 'Status.ps1')
 . (Join-Path $moduleRoot 'Capture.ps1')

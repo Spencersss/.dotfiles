@@ -1,0 +1,37 @@
+version: 1
+
+variables:
+  HOME: "${USERPROFILE}"
+
+entries:
+  home:
+    source: "home"
+    target: "${HOME}"
+    mode: directory
+    file_mode: symlink
+    groups:
+      - home
+      - common
+    enabled: true
+
+  zed-settings:
+    source: "apps/zed/settings.json"
+    target: "${APPDATA}/Zed/settings.json"
+    mode: copy
+    preserve_keys: [ssh_connections]
+    groups: [editor]
+    enabled: true
+
+  zed-keymap:
+    source: "apps/zed/keymap.json"
+    target: "${APPDATA}/Zed/keymap.json"
+    mode: copy
+    groups: [editor]
+    enabled: true
+
+  zed-theme-spencer:
+    source: "apps/zed/themes/spencer-zed-theme.json"
+    target: "${APPDATA}/Zed/themes/spencer-zed-theme.json"
+    mode: copy
+    groups: [editor]
+    enabled: true

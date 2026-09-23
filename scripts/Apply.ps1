@@ -14,7 +14,7 @@ function Invoke-DotfilesApplyEntry {
         }
     }
     elseif ($Entry.Mode -eq 'copy' -and $null -ne $existing -and -not (Test-DotfilesSymbolicLink -Item $existing) -and
-        -not $existing.PSIsContainer -and (Test-DotfilesSameFile -First $Entry.Source -Second $Entry.Target)) {
+        -not $existing.PSIsContainer -and (Test-DotfilesCopyMatches -Entry $Entry)) {
         Write-DotfilesEntryResult -Name $Entry.Name -State 'CURRENT' -Detail 'copy matches repository'
         return
     }
@@ -26,6 +26,13 @@ function Invoke-DotfilesApplyEntry {
     if ($Entry.Mode -eq 'symlink') {
         # Check permission before backing up or removing an existing user file.
         Assert-DotfilesSymbolicLinkCapability -Directory $parent
+    }
+
+    $copyContent = $null
+    if ($Entry.Mode -eq 'copy' -and @($Entry.PreserveKeys).Count -gt 0) {
+        if ($null -ne $existing -and $existing.PSIsContainer) { throw "Target is a directory; refusing to replace it: $($Entry.Target)" }
+        $existingPath = if ($null -ne $existing) { $Entry.Target } else { $null }
+        $copyContent = Get-DotfilesJsonApplyContent -Source $Entry.Source -Target $existingPath -PreserveKeys @($Entry.PreserveKeys)
     }
 
     if ($null -ne $existing) {
@@ -53,8 +60,13 @@ function Invoke-DotfilesApplyEntry {
         return
     }
 
-    [System.IO.File]::Copy($Entry.Source, $Entry.Target, $true)
-    if (-not (Test-DotfilesSameFile -First $Entry.Source -Second $Entry.Target)) {
+    if (@($Entry.PreserveKeys).Count -gt 0) {
+        [System.IO.File]::WriteAllText($Entry.Target, [string]$copyContent, [System.Text.UTF8Encoding]::new($false))
+    }
+    else {
+        [System.IO.File]::Copy($Entry.Source, $Entry.Target, $true)
+    }
+    if (-not (Test-DotfilesCopyMatches -Entry $Entry)) {
         throw "Copy verification failed for '$($Entry.Target)'."
     }
     Write-DotfilesEntryResult -Name $Entry.Name -State 'APPLIED' -Detail 'file copied'
