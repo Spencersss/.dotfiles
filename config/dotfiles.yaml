@@ -1,0 +1,14 @@
+version: 1
+
+variables:
+  HOME: "${USERPROFILE}"
+
+entries:
+  starship:
+    source: ".config/starship.toml"
+    target: "${HOME}/.config/starship.toml"
+    mode: symlink
+    groups:
+      - terminal
+      - common
+    enabled: true

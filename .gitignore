@@ -1,0 +1,3 @@
+# Keep the backup directory placeholder tracked, but never commit captured files.
+/backups/*
+!/backups/.gitkeep
