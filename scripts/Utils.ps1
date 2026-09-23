@@ -103,6 +103,10 @@ function Resolve-DotfilesVariables {
                     }
                 }
             }
+            if (-not $found -and [string]::Equals($name, 'DOCUMENTS', [System.StringComparison]::OrdinalIgnoreCase)) {
+                $replacement = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::MyDocuments)
+                $found = -not [string]::IsNullOrWhiteSpace($replacement)
+            }
             if (-not $found) {
                 $replacement = [Environment]::GetEnvironmentVariable($name)
                 $found = $null -ne $replacement

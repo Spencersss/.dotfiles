@@ -14,6 +14,20 @@ entries:
       - common
     enabled: true
 
+  powershell-profile:
+    source: "apps/powershell/Microsoft.PowerShell_profile.ps1"
+    target: "${DOCUMENTS}/PowerShell/Microsoft.PowerShell_profile.ps1"
+    mode: copy
+    groups: [shell, powershell]
+    enabled: true
+
+  windows-powershell-profile:
+    source: "apps/powershell/WindowsPowerShell_profile.ps1"
+    target: "${DOCUMENTS}/WindowsPowerShell/Microsoft.PowerShell_profile.ps1"
+    mode: copy
+    groups: [shell, powershell]
+    enabled: true
+
   zed-settings:
     source: "apps/zed/settings.json"
     target: "${APPDATA}/Zed/settings.json"

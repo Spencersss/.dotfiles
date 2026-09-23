@@ -7,6 +7,9 @@ This repository is the source of truth for personal configuration. `dotfiles.yam
 ```text
 .dotfiles/
 ├── apps/
+│   ├── powershell/
+│   │   ├── Microsoft.PowerShell_profile.ps1
+│   │   └── WindowsPowerShell_profile.ps1
 │   └── zed/
 │       ├── settings.json
 │       ├── keymap.json
@@ -27,9 +30,11 @@ This repository is the source of truth for personal configuration. `dotfiles.yam
 └── README.md
 ```
 
+PowerShell profiles live under `apps/powershell/` and deploy to the Windows known Documents folder, including redirected Documents locations. They use copy mode: capture profile edits into the repository, then apply repository edits back to the active profile.
+
 The `home/` directory mirrors paths below `%USERPROFILE%`. For example, `home/.config/starship.toml` maps to `%USERPROFILE%\.config\starship.toml`. A `mode: directory` manifest entry expands files individually, so the manager never links the whole user profile. Files named `.gitkeep` only preserve empty directories and are ignored by the mapper.
 
-Application-specific files live under `apps/<application>/`. The current Zed entries use copy mode at `%APPDATA%\Zed` so Zed reads ordinary files. The Zed settings entry preserves the local `ssh_connections` key across apply and excludes it from status comparisons and capture, keeping it out of the shared repository. Use `capture` after editing other deployed settings in Zed.
+Application-specific files live under `apps/<application>/`. PowerShell 7 and Windows PowerShell profiles deploy as copies to the Windows known Documents folder, which respects folder redirection. Zed entries use copy mode at `%APPDATA%\Zed` so Zed reads ordinary files. The Zed settings entry preserves the local `ssh_connections` key across apply and excludes it from status comparisons and capture, keeping it out of the shared repository. Use `capture` after editing other deployed settings in Zed.
 
 ## Requirements and setup
 
@@ -55,14 +60,17 @@ Select one top-level entry or an individual expanded home file:
 .\scripts\dotfiles.ps1 apply zed-settings
 .\scripts\dotfiles.ps1 status home
 .\scripts\dotfiles.ps1 capture zed-settings
+.\scripts\dotfiles.ps1 apply powershell-profile
+.\scripts\dotfiles.ps1 capture powershell-profile
+.\scripts\dotfiles.ps1 apply windows-powershell-profile
+.\scripts\dotfiles.ps1 capture windows-powershell-profile
 .\scripts\dotfiles.ps1 status home/.config/starship.toml
 ```
-
 `apply` creates target parent directories and deploys enabled entries. `status` compares target state with the manifest. `capture` copies changed `copy` targets back to the repository; a symlink entry already points to its source. Commands return a non-zero exit code if entries fail or need attention.
 
 ## Manifest and modes
 
-`dotfiles.yaml` is generic. Sources are relative to the repository unless absolute. Targets may use `${USERPROFILE}`, `${APPDATA}`, `${LOCALAPPDATA}`, or variables defined in the manifest. Variables can refer to other manifest variables or environment variables. Unknown and circular variables fail with an error. Entries support `source`, `target`, `mode`, `file_mode` (for directory entries), `preserve_keys` (for copied JSON objects), `groups`, `machines`, and `enabled`. Preserved top-level JSON keys remain local at the target: apply retains their target values, status compares the managed fields and requires the shared source to omit those keys, and capture strips them from the repository copy. Groups are recorded for future group selection; the current CLI selects entries by name.
+`dotfiles.yaml` is generic. Sources are relative to the repository unless absolute. Targets may use `${USERPROFILE}`, `${APPDATA}`, `${LOCALAPPDATA}`, `${DOCUMENTS}` (the Windows known Documents folder, including redirection), or variables defined in the manifest. Variables can refer to other manifest variables or environment variables. Unknown and circular variables fail with an error. Entries support `source`, `target`, `mode`, `file_mode` (for directory entries), `preserve_keys` (for copied JSON objects), `groups`, `machines`, and `enabled`. Preserved top-level JSON keys remain local at the target: apply retains their target values, status compares the managed fields and requires the shared source to omit those keys, and capture strips them from the repository copy. Groups are recorded for future group selection; the current CLI selects entries by name.
 
 - `symlink`: create a file symbolic link from the target to the repository source.
 - `copy`: copy the repository file to the target; `status` compares file content and `capture` copies target changes back.
