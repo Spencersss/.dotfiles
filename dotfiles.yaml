@@ -18,6 +18,7 @@ entries:
     source: "apps/zed/settings.json"
     target: "${APPDATA}/Zed/settings.json"
     mode: copy
+    preserve_keys: [ssh_connections]
     groups: [editor]
     enabled: true
 

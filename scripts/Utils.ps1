@@ -153,6 +153,7 @@ function Get-DotfilesSelectedEntries {
         $source = Get-ObjectProperty -InputObject $raw -Name 'source'
         $target = Get-ObjectProperty -InputObject $raw -Name 'target'
         $mode = ([string](Get-ObjectProperty -InputObject $raw -Name 'mode')).ToLowerInvariant()
+        $preserveKeys = @(Get-ObjectProperty -InputObject $raw -Name 'preserve_keys' -Default @())
         if ([string]::IsNullOrWhiteSpace($source)) { throw "Manifest entry '$name' is missing 'source'." }
         if ([string]::IsNullOrWhiteSpace($target)) { throw "Manifest entry '$name' is missing 'target'." }
 
@@ -161,6 +162,7 @@ function Get-DotfilesSelectedEntries {
         if ($mode -eq 'directory') {
             $fileMode = ([string](Get-ObjectProperty -InputObject $raw -Name 'file_mode' -Default 'symlink')).ToLowerInvariant()
             if ($fileMode -notin @('symlink', 'copy')) { throw "Manifest entry '$name' uses unsupported file_mode '$fileMode'." }
+            if ($preserveKeys.Count -gt 0) { throw "Manifest entry '$name' can use preserve_keys only with copy mode." }
             if (-not (Test-Path -LiteralPath $resolvedSource -PathType Container)) { throw "Directory source does not exist: $resolvedSource" }
             $files = @(Get-ChildItem -LiteralPath $resolvedSource -File -Recurse -Force | Where-Object { $_.Name -ne '.gitkeep' })
             foreach ($file in $files) {
@@ -170,15 +172,17 @@ function Get-DotfilesSelectedEntries {
                     [string]::Equals($Selector, ("{0}/{1}" -f $name, $relative.Replace('\','/')), [System.StringComparison]::OrdinalIgnoreCase) -or
                     [string]::IsNullOrWhiteSpace($Selector)) {
                     if (Test-DotfilesSamePath -First $file.FullName -Second $childTarget) { throw "Manifest entry '$name' resolves source and target to the same path: $childTarget" }
-                    $selected += [pscustomobject]@{ Name = ("{0}/{1}" -f $name, $relative.Replace('\','/')); Source = $file.FullName; Target = $childTarget; Mode = $fileMode; Groups = @(Get-ObjectProperty -InputObject $raw -Name 'groups') }
+                    $selected += [pscustomobject]@{ Name = ("{0}/{1}" -f $name, $relative.Replace('\','/')); Source = $file.FullName; Target = $childTarget; Mode = $fileMode; Groups = @(Get-ObjectProperty -InputObject $raw -Name 'groups'); PreserveKeys = @() }
                 }
             }
             continue
         }
 
         if ($mode -notin @('symlink', 'copy')) { throw "Manifest entry '$name' uses unsupported mode '$mode'. Supported modes are symlink, copy, and directory." }
+        if ($preserveKeys.Count -gt 0 -and $mode -ne 'copy') { throw "Manifest entry '$name' can use preserve_keys only with copy mode." }
+        foreach ($preserveKey in $preserveKeys) { if ([string]::IsNullOrWhiteSpace([string]$preserveKey)) { throw "Manifest entry '$name' contains an empty preserve_keys value." } }
         if (Test-DotfilesSamePath -First $resolvedSource -Second $resolvedTarget) { throw "Manifest entry '$name' resolves source and target to the same path: $resolvedSource" }
-        $selected += [pscustomobject]@{ Name = [string]$name; Source = $resolvedSource; Target = $resolvedTarget; Mode = $mode; Groups = @(Get-ObjectProperty -InputObject $raw -Name 'groups') }
+        $selected += [pscustomobject]@{ Name = [string]$name; Source = $resolvedSource; Target = $resolvedTarget; Mode = $mode; Groups = @(Get-ObjectProperty -InputObject $raw -Name 'groups'); PreserveKeys = $preserveKeys }
     }
 
     if (-not [string]::IsNullOrWhiteSpace($Selector) -and $selected.Count -eq 0) {
@@ -227,6 +231,94 @@ function Test-DotfilesSameFile {
     return (Get-FileHash -LiteralPath $First -Algorithm SHA256).Hash -eq (Get-FileHash -LiteralPath $Second -Algorithm SHA256).Hash
 }
 
+function Read-DotfilesJsonObject {
+    param([Parameter(Mandatory)] [string] $Path)
+
+    try {
+        $value = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json -AsHashtable -Depth 100 -ErrorAction Stop
+    }
+    catch {
+        throw "Unable to parse JSON file '$Path': $($_.Exception.Message)"
+    }
+    if ($value -isnot [System.Collections.IDictionary]) {
+        throw "JSON file '$Path' must contain a top-level object to use preserve_keys."
+    }
+    return $value
+}
+
+function Find-DotfilesJsonKey {
+    param([Parameter(Mandatory)] [System.Collections.IDictionary] $Object, [Parameter(Mandatory)] [string] $Name)
+    foreach ($key in $Object.Keys) {
+        if ([string]::Equals([string]$key, $Name, [System.StringComparison]::OrdinalIgnoreCase)) { return [string]$key }
+    }
+    return $null
+}
+
+function Remove-DotfilesJsonKeys {
+    param([Parameter(Mandatory)] [System.Collections.IDictionary] $Object, [string[]] $Names)
+    foreach ($name in $Names) {
+        $key = Find-DotfilesJsonKey -Object $Object -Name $name
+        if ($null -ne $key) { [void]$Object.Remove($key) }
+    }
+    return $Object
+}
+
+function Assert-DotfilesJsonSourceExcludesPreservedKeys {
+    param([Parameter(Mandatory)] [System.Collections.IDictionary] $Object, [string[]] $PreserveKeys)
+    foreach ($name in $PreserveKeys) {
+        if ($null -ne (Find-DotfilesJsonKey -Object $Object -Name $name)) {
+            throw "Shared JSON source contains local-only key '$name'. Remove it from the repository source."
+        }
+    }
+}
+
+function Test-DotfilesJsonFilesMatch {
+    param([Parameter(Mandatory)] [string] $First, [Parameter(Mandatory)] [string] $Second, [string[]] $PreserveKeys)
+
+    $left = Read-DotfilesJsonObject -Path $First
+    Assert-DotfilesJsonSourceExcludesPreservedKeys -Object $left -PreserveKeys $PreserveKeys
+    $right = Read-DotfilesJsonObject -Path $Second
+    [void](Remove-DotfilesJsonKeys -Object $left -Names $PreserveKeys)
+    [void](Remove-DotfilesJsonKeys -Object $right -Names $PreserveKeys)
+    $leftJson = ConvertTo-Json -InputObject $left -Depth 100 -Compress
+    $rightJson = ConvertTo-Json -InputObject $right -Depth 100 -Compress
+    return [string]::Equals($leftJson, $rightJson, [System.StringComparison]::Ordinal)
+}
+function Test-DotfilesCopyMatches {
+    param([Parameter(Mandatory)] [object] $Entry)
+    if (-not (Test-Path -LiteralPath $Entry.Source -PathType Leaf) -or -not (Test-Path -LiteralPath $Entry.Target -PathType Leaf)) { return $false }
+    $preserveKeys = @($Entry.PreserveKeys)
+    if ($preserveKeys.Count -gt 0) {
+        return Test-DotfilesJsonFilesMatch -First $Entry.Source -Second $Entry.Target -PreserveKeys $preserveKeys
+    }
+    return Test-DotfilesSameFile -First $Entry.Source -Second $Entry.Target
+}
+
+function Get-DotfilesJsonApplyContent {
+    param([Parameter(Mandatory)] [string] $Source, [string] $Target, [string[]] $PreserveKeys)
+
+    $sourceObject = Read-DotfilesJsonObject -Path $Source
+    Assert-DotfilesJsonSourceExcludesPreservedKeys -Object $sourceObject -PreserveKeys $PreserveKeys
+    if (-not [string]::IsNullOrWhiteSpace($Target) -and (Test-Path -LiteralPath $Target -PathType Leaf)) {
+        $targetObject = Read-DotfilesJsonObject -Path $Target
+        foreach ($name in $PreserveKeys) {
+            $targetKey = Find-DotfilesJsonKey -Object $targetObject -Name $name
+            if ($null -eq $targetKey) { continue }
+            $sourceKey = Find-DotfilesJsonKey -Object $sourceObject -Name $name
+            if ($null -ne $sourceKey -and -not [string]::Equals($sourceKey, $targetKey, [System.StringComparison]::Ordinal)) {
+                [void]$sourceObject.Remove($sourceKey)
+            }
+            $sourceObject[$targetKey] = $targetObject[$targetKey]
+        }
+    }
+    return (ConvertTo-Json -InputObject $sourceObject -Depth 100) + "`n"
+}
+function Get-DotfilesJsonCaptureContent {
+    param([Parameter(Mandatory)] [string] $Target, [string[]] $PreserveKeys)
+    $targetObject = Read-DotfilesJsonObject -Path $Target
+    [void](Remove-DotfilesJsonKeys -Object $targetObject -Names $PreserveKeys)
+    return (ConvertTo-Json -InputObject $targetObject -Depth 100) + "`n"
+}
 function Remove-DotfilesFileOrLink {
     param([Parameter(Mandatory)] [string] $Path)
     $item = Get-DotfilesItem -Path $Path

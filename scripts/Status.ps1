@@ -22,8 +22,9 @@ function Get-DotfilesEntryStatus {
     }
 
     if ($isLink) { return [pscustomobject]@{ State = 'UNMANAGED'; Detail = 'copy mode expects a regular file' } }
-    if (Test-DotfilesSameFile -First $Entry.Source -Second $Entry.Target) {
-        return [pscustomobject]@{ State = 'CURRENT'; Detail = 'copy matches repository' }
+    if (Test-DotfilesCopyMatches -Entry $Entry) {
+        $detail = if (@($Entry.PreserveKeys).Count -gt 0) { 'managed JSON settings match; local keys preserved' } else { 'copy matches repository' }
+        return [pscustomobject]@{ State = 'CURRENT'; Detail = $detail }
     }
     return [pscustomobject]@{ State = 'DIFFERENT'; Detail = 'target content differs from repository' }
 }

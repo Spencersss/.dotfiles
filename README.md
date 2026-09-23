@@ -29,7 +29,7 @@ This repository is the source of truth for personal configuration. `dotfiles.yam
 
 The `home/` directory mirrors paths below `%USERPROFILE%`. For example, `home/.config/starship.toml` maps to `%USERPROFILE%\.config\starship.toml`. A `mode: directory` manifest entry expands files individually, so the manager never links the whole user profile. Files named `.gitkeep` only preserve empty directories and are ignored by the mapper.
 
-Application-specific files live under `apps/<application>/`. The current Zed entries use copy mode at `%APPDATA%\Zed` so Zed reads ordinary files. Use `capture` after editing a deployed copy in Zed.
+Application-specific files live under `apps/<application>/`. The current Zed entries use copy mode at `%APPDATA%\Zed` so Zed reads ordinary files. The Zed settings entry preserves the local `ssh_connections` key across apply and excludes it from status comparisons and capture, keeping it out of the shared repository. Use `capture` after editing other deployed settings in Zed.
 
 ## Requirements and setup
 
@@ -62,7 +62,7 @@ Select one top-level entry or an individual expanded home file:
 
 ## Manifest and modes
 
-`dotfiles.yaml` is generic. Sources are relative to the repository unless absolute. Targets may use `${USERPROFILE}`, `${APPDATA}`, `${LOCALAPPDATA}`, or variables defined in the manifest. Variables can refer to other manifest variables or environment variables. Unknown and circular variables fail with an error. Entries support `source`, `target`, `mode`, `file_mode` (for directory entries), `groups`, `machines`, and `enabled`. Groups are recorded for future group selection; the current CLI selects entries by name.
+`dotfiles.yaml` is generic. Sources are relative to the repository unless absolute. Targets may use `${USERPROFILE}`, `${APPDATA}`, `${LOCALAPPDATA}`, or variables defined in the manifest. Variables can refer to other manifest variables or environment variables. Unknown and circular variables fail with an error. Entries support `source`, `target`, `mode`, `file_mode` (for directory entries), `preserve_keys` (for copied JSON objects), `groups`, `machines`, and `enabled`. Preserved top-level JSON keys remain local at the target: apply retains their target values, status compares the managed fields and requires the shared source to omit those keys, and capture strips them from the repository copy. Groups are recorded for future group selection; the current CLI selects entries by name.
 
 - `symlink`: create a file symbolic link from the target to the repository source.
 - `copy`: copy the repository file to the target; `status` compares file content and `capture` copies target changes back.
