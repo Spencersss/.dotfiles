@@ -9,5 +9,12 @@
     "bindings": {
       "shift shift": "file_finder::Toggle"
     }
-  }
+  },
+  {
+      "context": "Editor && menu",
+      "bindings": {
+        "tab": "editor::ContextMenuNext",
+        "shift-tab": "editor::ContextMenuPrevious"
+      }
+    }
 ]
